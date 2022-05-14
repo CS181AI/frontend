@@ -48,5 +48,6 @@ export default defineConfig({
     //     target: 'https://your.url'
     //   }
     // }
-  }
+  },
+  base:'./'
 })
