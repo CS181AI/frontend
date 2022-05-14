@@ -34,6 +34,8 @@ module.exports = {
     ],
     // 支持for中使用unary operator
     'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
+    // 关闭class中函数this检查
+    'class-methods-use-this': 'off',
   },
   settings: {
     // 安装eslint-import-resolver-typescript后在此配置import/resolver，即可读取项目根目录下tsconfig.json中的路径别名设置
