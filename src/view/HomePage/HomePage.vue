@@ -9,12 +9,12 @@
         style="width: 60%;min-height: 300px;margin-bottom: 5px"
       >
         <div class="flex">
-          <div style="display:flex;flex:5;justify-content:center;align-items:center;">
+          <div class="left-board">
             <n-grid
               :cols="8"
               :x-gap="2"
               :y-gap="2"
-              class="dark:bg-gray-300"
+              class="dark:bg-gray-200"
               style="width: 80%"
             >
               <n-grid-item
@@ -56,11 +56,11 @@
 </template>
 <script setup lang="ts">
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
-import SvgIcon from '@/components/SvgIcon/index.vue';
-import { computed, reactive } from 'vue';
+// import SvgIcon from '@/components/SvgIcon/index.vue';
+import { reactive, ref } from 'vue';
 import screenfull from 'screenfull';
-import ChessGrid from './chessGrid.vue';
-import Grid from './game.d';
+import ChessGrid from '@/view/HomePage/ChessGrid.vue';
+import { Grid, ChessPiece } from './game.d';
 
 function toggleScreen() {
   if (screenfull.isEnabled) {
@@ -76,6 +76,7 @@ function print(id:number) {
   );
 }
 
+// 棋盘初始化
 function boardInit() {
   const board: Grid[] = [];
   for (let i = 0; i < 8; i++) {
@@ -84,29 +85,106 @@ function boardInit() {
         x: i,
         y: j,
         canPlace: false,
-        chessPieceType: null,
+        chessPiece: null,
       });
     }
   }
   // 中间四个格子摆放棋子
-  board[27].chessPieceType = 'white';
-  board[19].canPlace = true;
-  board[28].chessPieceType = 'black';
-  board[35].chessPieceType = 'black';
-  board[36].chessPieceType = 'white';
+  board[27].chessPiece = 'white';
+  // board[19].canPlace = true;
+  board[28].chessPiece = 'black';
+  board[35].chessPiece = 'black';
+  board[36].chessPiece = 'white';
   return board;
 }
 const board = reactive(boardInit());
-function changePieceType() {
-  board[27].chessPieceType = board[27].chessPieceType === 'white' ? 'black' : 'white';
+
+// 表单项，即游戏设置
+const gameSetting = reactive({
+  agent: '',
+  selectedChessPiece: 'black',
+});
+
+// 游戏状态初始化
+// 可以下棋的位置，即对应可以翻转的位置
+type AvailablePos={
+  position:number
+  reverseList:number[] // 对应可翻转的位置
 }
+// interface GameState{
+//   curChessPiece: ChessPiece,
+//   whiteAvailablePos:AvailablePos[],
+//   blackAvailablePos:AvailablePos[]
+// }
+// const gameState = reactive<GameState>({
+//   curChessPiece: 'black',
+//   whiteAvailablePos: [],
+//   blackAvailablePos: [],
+// });
+
+class GameState {
+  curChessPiece: ChessPiece;
+
+  whiteAvailablePos:AvailablePos[];
+
+  blackAvailablePos:AvailablePos[];
+
+  constructor() {
+    this.curChessPiece = 'black';
+    this.whiteAvailablePos = [];
+    this.blackAvailablePos = [];
+  }
+
+  findAvailablePos(curChessPiece:ChessPiece) {
+    const marginPos = [];
+    const res:AvailablePos[] = [];
+    for (let i = 0; i < 64; i++) {
+      if (GameState.isMargin(i)) marginPos.push(i);
+    }
+
+    console.log(marginPos);
+  }
+
+  private static isMargin(index:number) {
+    // console.log(board[0]);
+    if (board[index].chessPiece !== null) return false;
+    const x = Math.floor(index / 8);
+    const y = index % 8;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const i of [-1, 0, 1]) {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const j of [-1, 0, 1]) {
+        if (GameState.hasChessPiece(x + i, y + j)) return true;
+      }
+    }
+    return false;
+  }
+
+  private static hasChessPiece(x:number, y:number) {
+    return !(x < 0 || x > 7 || y < 0 || y > 7 || board[8 * x + y].chessPiece === null);
+  }
+}
+const gameState = new GameState();
+gameState.findAvailablePos('black');
+// gameState.isMargin();
+// const curChessPiece = ref<ChessPiece>('black');
+// const whiteAvailablePos = ref<AvailablePos>([]);
+// if (gameSetting.selectedChessPiece === curChessPiece.value) { console.log('yes'); }
+
+function changePieceType() {
+  board[27].chessPiece = board[27].chessPiece === 'white' ? 'black' : 'white';
+}
+
+// 落子函数
 function putDown(index:number) {
   if (!board[index].canPlace) {
     window.$message.warning(
       `不可在此区域落子:${index}`,
     );
   } else {
-    board[index].chessPieceType = 'black';
+    board[index].chessPiece = gameState.curChessPiece;
+    board[index].canPlace = false;
+    gameState.curChessPiece = gameState.curChessPiece === 'black' ? 'white' : 'black';
   }
 }
 </script>
@@ -118,6 +196,13 @@ function putDown(index:number) {
   justify-content: center;
   align-items: center;
   width: 100%;
+}
+
+.left-board{
+  display:flex;
+  flex:5;
+  justify-content:center;
+  align-items:center;
 }
 
 .right-pannel{

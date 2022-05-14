@@ -4,11 +4,11 @@
     class="light-green"
   >
     <div
-      v-if="props.grid.chessPieceType==='black'"
+      v-if="props.grid.chessPiece==='black'"
       class="chess-piece-black"
     />
     <div
-      v-else-if="props.grid.chessPieceType==='white'"
+      v-else-if="props.grid.chessPiece==='white'"
       class="chess-piece-white"
     />
   </div>
@@ -17,11 +17,11 @@
     class="green"
   >
     <div
-      v-if="props.grid.chessPieceType==='black'"
+      v-if="props.grid.chessPiece==='black'"
       class="chess-piece-black"
     />
     <div
-      v-else-if="props.grid.chessPieceType==='white'"
+      v-else-if="props.grid.chessPiece==='white'"
       class="chess-piece-white"
     />
   </div>
@@ -29,7 +29,7 @@
 
 <script lang="ts" setup>
 import { defineProps } from 'vue';
-import Grid from './game.d';
+import { Grid } from './game.d';
 
 interface Props {
   index: number
@@ -58,15 +58,15 @@ const props = defineProps<Props>();
 
 .chess-piece-black{
   background-color: black;
-  width:32px;
-  height:32px;
+  width:36px;
+  height:36px;
   border-radius: 50%;
   box-shadow: 0 2px 8px #333;
 }
 .chess-piece-white{
   background-color: white;
-  width:32px;
-  height:32px;
+  width:36px;
+  height:36px;
   border-radius: 50%;
   box-shadow: 0 2px 8px #333;
 }
