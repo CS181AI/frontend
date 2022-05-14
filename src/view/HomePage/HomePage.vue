@@ -86,6 +86,7 @@ function boardInit() {
         y: j,
         canPlace: false,
         chessPiece: null,
+        showHint: false,
       });
     }
   }
@@ -139,7 +140,10 @@ class GameState {
     const marginPos = [];
     const res:AvailablePos[] = [];
     for (let i = 0; i < 64; i++) {
-      if (GameState.isMargin(i)) marginPos.push(i);
+      if (GameState.isMargin(i)) {
+        board[i].showHint = true;
+        marginPos.push(i);
+      }
     }
 
     console.log(marginPos);

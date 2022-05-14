@@ -11,6 +11,7 @@
       v-else-if="props.grid.chessPiece==='white'"
       class="chess-piece-white"
     />
+    <HintCircle v-else-if="props.grid.showHint" />
   </div>
   <div
     v-else
@@ -24,10 +25,12 @@
       v-else-if="props.grid.chessPiece==='white'"
       class="chess-piece-white"
     />
+    <HintCircle v-else-if="props.grid.showHint" />
   </div>
 </template>
 
 <script lang="ts" setup>
+import HintCircle from '@/view/HomePage/HintCircle.vue';
 import { defineProps } from 'vue';
 import { Grid } from './game.d';
 

@@ -5,5 +5,6 @@ declare type Grid={
     y:number
     canPlace:boolean
     chessPiece:ChessPiece
+    showHint: boolean
 }
 export { Grid, ChessPiece };
