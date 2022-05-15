@@ -43,7 +43,7 @@ const props = defineProps<Props>();
 
 <style scoped>
 .light-green {
-  height: 67px;
+  height: 68px;
   background-color: rgba(0, 128, 0, 0.12);
   display: flex;
   flex-direction: column;
@@ -51,7 +51,7 @@ const props = defineProps<Props>();
   align-items: center;
 }
 .green {
-  height: 67px;
+  height: 68px;
   background-color: rgba(0, 128, 0, 0.24);
   display: flex;
   flex-direction: column;
