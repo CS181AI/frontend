@@ -15,7 +15,7 @@
               :x-gap="2"
               :y-gap="2"
               class="dark:bg-gray-200"
-              style="width: 80%"
+              style="width: 88%"
             >
               <n-grid-item
                 v-for="(item,index) of board"
@@ -30,12 +30,42 @@
             </n-grid>
           </div>
           <div class="right-pannel">
+            <div style="width: 100%">
+              <n-form
+                label-placement="left"
+                :model="gameSetting"
+              >
+                <n-form-item label="模式选择">
+                  <n-select
+                    v-model:value="gameSetting.agent"
+                    :options="options"
+                  />
+                </n-form-item>
+                <n-form-item label="选择棋色">
+                  <n-switch
+                    v-model:value="gameSetting.selectedChessPiece"
+                    checked-value="white"
+                    unchecked-value="black"
+                  />
+                </n-form-item>
+                <n-form-item>
+                  <n-button
+                    strong
+                    secondary
+                    type="info"
+                    class="w-full"
+                  >
+                    开始
+                  </n-button>
+                </n-form-item>
+              </n-form>
+            </div>
             <div>
               <n-button
                 strong
                 secondary
                 type="success"
-                @click="changePieceType"
+                @click="print"
               >
                 Start
               </n-button>
@@ -54,6 +84,8 @@
         </div>
       </n-card>
     </div>
+
+    <!--    结果显示-->
     <n-modal v-model:show="gameState.isEnd">
       <n-card
         style="width: 600px"
@@ -69,13 +101,19 @@
         >
           <template #icon>
             <SvgIcon
-              name="赢"
+              name="奖杯"
               size="180"
               class="mb-2"
             />
           </template>
           <template #footer>
-            <n-button>再来一局</n-button>
+            <n-button
+              strong
+              secondary
+              type="success"
+            >
+              再来一局
+            </n-button>
           </template>
         </n-result>
       </n-card>
@@ -96,12 +134,6 @@ function toggleScreen() {
     // screenfull.request(element);
     screenfull.request();
   }
-}
-
-function print(id:number) {
-  window.$message.success(
-    `你点击了${id}`,
-  );
 }
 
 // 棋盘初始化
@@ -128,10 +160,15 @@ function boardInit() {
 const board = reactive(boardInit());
 
 // 表单项，即游戏设置
+const options = [{ label: '双人模式', value: 1 }, { label: '蒙特卡洛', value: 2 }, { label: '强化学习', value: 3 }];
 const gameSetting = reactive({
   agent: '',
   selectedChessPiece: 'black',
 });
+
+function print() {
+  console.log(gameSetting.selectedChessPiece);
+}
 
 // 游戏状态初始化
 // 可以下棋的位置，即对应可以翻转的位置
@@ -328,7 +365,7 @@ function putDown(index:number) {
 
 .left-board{
   display:flex;
-  flex:5;
+  flex:3;
   justify-content:center;
   align-items:center;
 }
