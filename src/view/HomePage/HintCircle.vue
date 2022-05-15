@@ -2,7 +2,7 @@
   <div class="point point-flicker" />
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 
 </script>
 
