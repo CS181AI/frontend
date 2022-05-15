@@ -39,6 +39,8 @@
               >
                 Start
               </n-button>
+              <br>
+              当前棋子颜色{{ gameState.curChessPiece }}
             </div>
             <div>
               <n-button @click="toggleScreen">
@@ -52,11 +54,37 @@
         </div>
       </n-card>
     </div>
+    <n-modal v-model:show="gameState.isEnd">
+      <n-card
+        style="width: 600px"
+        :bordered="false"
+        size="huge"
+        role="dialog"
+        aria-modal="true"
+      >
+        <n-result
+          title="赢"
+          status="success"
+          description="失败的孩子"
+        >
+          <template #icon>
+            <SvgIcon
+              name="赢"
+              size="180"
+              class="mb-2"
+            />
+          </template>
+          <template #footer>
+            <n-button>再来一局</n-button>
+          </template>
+        </n-result>
+      </n-card>
+    </n-modal>
   </n-layout-content>
 </template>
 <script setup lang="ts">
 import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
-// import SvgIcon from '@/components/SvgIcon/index.vue';
+import SvgIcon from '@/components/SvgIcon/index.vue';
 import { reactive, ref } from 'vue';
 import screenfull from 'screenfull';
 import ChessGrid from '@/view/HomePage/ChessGrid.vue';
@@ -120,11 +148,15 @@ class GameState {
 
   availablePos: { 'white': AvailablePos[]; 'black': AvailablePos[]; };
 
+  isEnd:boolean;
+
   constructor() {
     this.curChessPiece = 'black';
+    this.isEnd = false;
     const whiteAvailablePos:AvailablePos[] = [];
     const blackAvailablePos:AvailablePos[] = [];
     this.availablePos = { white: whiteAvailablePos, black: blackAvailablePos };
+    this.findAvailablePos();
   }
 
   putDown(index:number) {
@@ -137,6 +169,15 @@ class GameState {
     });
     this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
     this.findAvailablePos();
+    const color = this.curChessPiece === 'white' ? 'white' : 'black';
+    if (this.availablePos[color].length === 0) {
+      this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
+    }
+    this.findAvailablePos();
+    const color1 = this.curChessPiece === 'white' ? 'white' : 'black';
+    if (this.availablePos[color1].length === 0) {
+      this.isEnd = true;
+    }
   }
 
   findAvailablePos() {
@@ -167,6 +208,7 @@ class GameState {
     this.showHint();
   }
 
+  // 用于显示哪些格子可以落子
   private showHint() {
     board.forEach((item) => {
       item.showHint = false;
@@ -256,8 +298,8 @@ class GameState {
     return GameState.isValid(x, y) && board[x + 8 * y].chessPiece !== null;
   }
 }
-const gameState = new GameState();
-gameState.findAvailablePos();
+const gameState = reactive(new GameState());
+// gameState.findAvailablePos();
 
 function changePieceType() {
   board[27].chessPiece = board[27].chessPiece === 'white' ? 'black' : 'white';
