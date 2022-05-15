@@ -82,8 +82,8 @@ function boardInit() {
   for (let i = 0; i < 8; i++) {
     for (let j = 0; j < 8; j++) {
       board.push({
-        x: i,
-        y: j,
+        x: j,
+        y: i,
         canPlace: false,
         chessPiece: null,
         showHint: false,
@@ -92,7 +92,6 @@ function boardInit() {
   }
   // 中间四个格子摆放棋子
   board[27].chessPiece = 'white';
-  // board[19].canPlace = true;
   board[28].chessPiece = 'black';
   board[35].chessPiece = 'black';
   board[36].chessPiece = 'white';
@@ -112,17 +111,10 @@ type AvailablePos={
   position:number
   reverseList:number[] // 对应可翻转的位置
 }
-// interface GameState{
-//   curChessPiece: ChessPiece,
-//   whiteAvailablePos:AvailablePos[],
-//   blackAvailablePos:AvailablePos[]
-// }
-// const gameState = reactive<GameState>({
-//   curChessPiece: 'black',
-//   whiteAvailablePos: [],
-//   blackAvailablePos: [],
-// });
 
+// 定义方向枚举类
+// eslint-disable-next-line no-unused-vars
+enum Direction{TOPLEFT, TOP, TOPRIGHT, LEFT, RIGHT, BOTTOMLEFT, BOTTOM, BOTTOMRIGHT}
 class GameState {
   curChessPiece: ChessPiece;
 
@@ -130,33 +122,142 @@ class GameState {
 
   blackAvailablePos:AvailablePos[];
 
+  // availablePos: { white: AvailablePos[]; black: AvailablePos[]; };
+
   constructor() {
     this.curChessPiece = 'black';
     this.whiteAvailablePos = [];
     this.blackAvailablePos = [];
+    // const whiteAvailablePos:AvailablePos[] = [];
+    // const blackAvailablePos:AvailablePos[] = [];
+    // this.availablePos = { white: whiteAvailablePos, black: blackAvailablePos };
   }
 
-  findAvailablePos(curChessPiece:ChessPiece) {
-    const marginPos = [];
+  putDown(index:number) {
+    board[index].chessPiece = this.curChessPiece;
+    board[index].canPlace = false;
+    let reverseList:AvailablePos[] = [];
+    if (this.curChessPiece === 'white') {
+      reverseList = this.whiteAvailablePos.filter((item) => item.position === index);
+    } else {
+      reverseList = this.blackAvailablePos.filter((item) => item.position === index);
+    }
+    reverseList[0].reverseList.forEach((item) => {
+      board[item].chessPiece = this.curChessPiece;
+    });
+    this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
+    this.findAvailablePos();
+  }
+
+  findAvailablePos() {
+    const marginPos:number[] = [];
     const res:AvailablePos[] = [];
     for (let i = 0; i < 64; i++) {
-      if (GameState.isMargin(i)) {
-        board[i].showHint = true;
-        marginPos.push(i);
+      if (GameState.isMargin(i)) { marginPos.push(i); }
+    }
+    // console.log(marginPos);
+    // 对每一个边缘点判断其是否可以落子
+    for (const i of marginPos) {
+      const { x, y } = board[i];
+      let reverseList:number[] = [];
+      // 遍历8个方向
+      const directions = Object.values(Direction)
+        .filter((v) => !Number.isNaN(Number(v))) as number[];
+      for (const direction of directions) {
+        // 将8个方向中存在可以翻转的index存入reverseList中
+        reverseList = reverseList.concat(this.checkPath(x, y, direction));
+      }
+      // 如果存在可翻转的index表示当前i边缘点可以落子
+      if (reverseList.length !== 0) {
+        res.push({ position: i, reverseList });
       }
     }
+    if (this.curChessPiece === 'black') this.blackAvailablePos = res;
+    else this.whiteAvailablePos = res;
+    // console.log(res);
+    this.showHint();
+  }
 
-    console.log(marginPos);
+  private showHint() {
+    board.forEach((item) => {
+      item.showHint = false;
+      item.canPlace = false;
+    });
+    if (this.curChessPiece === 'black') {
+      this.blackAvailablePos.forEach((item) => {
+        board[item.position].showHint = true;
+        board[item.position].canPlace = true;
+      });
+    } else {
+      this.whiteAvailablePos.forEach((item) => {
+        board[item.position].showHint = true;
+        board[item.position].canPlace = true;
+      });
+    }
+  }
+
+  private checkPath(x:number, y:number, direction:Direction):number[] {
+    let x_ = x;
+    let y_ = y;
+    let res:number[] = [];
+    let i = 0;
+    let j = 0;
+    switch (direction) {
+      case Direction.TOPLEFT:
+        i = -1;
+        j = -1;
+        break;
+      case Direction.TOP:
+        j = -1;
+        break;
+      case Direction.TOPRIGHT:
+        i = 1;
+        j = -1;
+        break;
+      case Direction.LEFT:
+        i = -1;
+        break;
+      case Direction.RIGHT:
+        i = 1;
+        break;
+      case Direction.BOTTOMLEFT:
+        i = -1;
+        j = 1;
+        break;
+      case Direction.BOTTOM:
+        j = 1;
+        break;
+      case Direction.BOTTOMRIGHT:
+        i = 1;
+        j = 1;
+        break;
+
+      default:
+        return res;
+    }
+    if (!GameState.hasChessPiece(x_ + i, y_ + j)
+        || board[x_ + i + 8 * (y_ + j)].chessPiece === this.curChessPiece) {
+      return res;
+    }
+    while (true) {
+      x_ += i;
+      y_ += j;
+      if (!GameState.hasChessPiece(x_, y_)) {
+        res = [];
+        break;
+      } else if (board[x_ + 8 * y_].chessPiece !== this.curChessPiece) {
+        res.push(x_ + 8 * y_);
+      } else {
+        break;
+      }
+    }
+    return res;
   }
 
   private static isMargin(index:number) {
-    // console.log(board[0]);
     if (board[index].chessPiece !== null) return false;
-    const x = Math.floor(index / 8);
-    const y = index % 8;
-    // eslint-disable-next-line no-restricted-syntax
+    const { x, y } = board[index];
     for (const i of [-1, 0, 1]) {
-      // eslint-disable-next-line no-restricted-syntax
       for (const j of [-1, 0, 1]) {
         if (GameState.hasChessPiece(x + i, y + j)) return true;
       }
@@ -164,16 +265,16 @@ class GameState {
     return false;
   }
 
+  private static isValid(x:number, y:number) {
+    return x >= 0 && x <= 7 && y >= 0 && y <= 7;
+  }
+
   private static hasChessPiece(x:number, y:number) {
-    return !(x < 0 || x > 7 || y < 0 || y > 7 || board[8 * x + y].chessPiece === null);
+    return GameState.isValid(x, y) && board[x + 8 * y].chessPiece !== null;
   }
 }
 const gameState = new GameState();
-gameState.findAvailablePos('black');
-// gameState.isMargin();
-// const curChessPiece = ref<ChessPiece>('black');
-// const whiteAvailablePos = ref<AvailablePos>([]);
-// if (gameSetting.selectedChessPiece === curChessPiece.value) { console.log('yes'); }
+gameState.findAvailablePos();
 
 function changePieceType() {
   board[27].chessPiece = board[27].chessPiece === 'white' ? 'black' : 'white';
@@ -186,9 +287,7 @@ function putDown(index:number) {
       `不可在此区域落子:${index}`,
     );
   } else {
-    board[index].chessPiece = gameState.curChessPiece;
-    board[index].canPlace = false;
-    gameState.curChessPiece = gameState.curChessPiece === 'black' ? 'white' : 'black';
+    gameState.putDown(index);
   }
 }
 </script>
