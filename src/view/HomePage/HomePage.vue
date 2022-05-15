@@ -46,7 +46,17 @@
                     v-model:value="gameSetting.selectedChessPiece"
                     checked-value="white"
                     unchecked-value="black"
-                  />
+                  >
+                    <template #checked>
+                      白棋
+                    </template>
+                    <template #unchecked>
+                      <span style="color:black">黑棋</span>
+                    </template>
+                    <template #unchecked-icon>
+                      <span style="font-size:16px">⚫</span>
+                    </template>
+                  </n-switch>
                 </n-form-item>
                 <n-form-item>
                   <n-button
