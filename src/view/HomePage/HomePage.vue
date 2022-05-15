@@ -118,30 +118,20 @@ enum Direction{TOPLEFT, TOP, TOPRIGHT, LEFT, RIGHT, BOTTOMLEFT, BOTTOM, BOTTOMRI
 class GameState {
   curChessPiece: ChessPiece;
 
-  whiteAvailablePos:AvailablePos[];
-
-  blackAvailablePos:AvailablePos[];
-
-  // availablePos: { white: AvailablePos[]; black: AvailablePos[]; };
+  availablePos: { 'white': AvailablePos[]; 'black': AvailablePos[]; };
 
   constructor() {
     this.curChessPiece = 'black';
-    this.whiteAvailablePos = [];
-    this.blackAvailablePos = [];
-    // const whiteAvailablePos:AvailablePos[] = [];
-    // const blackAvailablePos:AvailablePos[] = [];
-    // this.availablePos = { white: whiteAvailablePos, black: blackAvailablePos };
+    const whiteAvailablePos:AvailablePos[] = [];
+    const blackAvailablePos:AvailablePos[] = [];
+    this.availablePos = { white: whiteAvailablePos, black: blackAvailablePos };
   }
 
   putDown(index:number) {
     board[index].chessPiece = this.curChessPiece;
     board[index].canPlace = false;
-    let reverseList:AvailablePos[] = [];
-    if (this.curChessPiece === 'white') {
-      reverseList = this.whiteAvailablePos.filter((item) => item.position === index);
-    } else {
-      reverseList = this.blackAvailablePos.filter((item) => item.position === index);
-    }
+    const temp = this.curChessPiece === 'white' ? 'white' : 'black';
+    const reverseList = this.availablePos[temp].filter((item) => item.position === index);
     reverseList[0].reverseList.forEach((item) => {
       board[item].chessPiece = this.curChessPiece;
     });
@@ -172,9 +162,8 @@ class GameState {
         res.push({ position: i, reverseList });
       }
     }
-    if (this.curChessPiece === 'black') this.blackAvailablePos = res;
-    else this.whiteAvailablePos = res;
-    // console.log(res);
+    const temp = this.curChessPiece === 'white' ? 'white' : 'black';
+    this.availablePos[temp] = res;
     this.showHint();
   }
 
@@ -183,17 +172,11 @@ class GameState {
       item.showHint = false;
       item.canPlace = false;
     });
-    if (this.curChessPiece === 'black') {
-      this.blackAvailablePos.forEach((item) => {
-        board[item.position].showHint = true;
-        board[item.position].canPlace = true;
-      });
-    } else {
-      this.whiteAvailablePos.forEach((item) => {
-        board[item.position].showHint = true;
-        board[item.position].canPlace = true;
-      });
-    }
+    const temp = this.curChessPiece === 'white' ? 'white' : 'black';
+    this.availablePos[temp].forEach((item) => {
+      board[item.position].showHint = true;
+      board[item.position].canPlace = true;
+    });
   }
 
   private checkPath(x:number, y:number, direction:Direction):number[] {
