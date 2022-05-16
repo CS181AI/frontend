@@ -2,12 +2,16 @@
   <div class="w-full bg-red-200/50 rounded flex flex-col items-center py-2">
     <div class="w-full flex items-center justify-evenly">
       <div class="flex flex-col items-center">
-        <span class="text-5xl font-extrabold mb-1">{{ props.whiteNum }}</span>
+        <span class="text-5xl font-extrabold mb-1">
+          {{ props.whiteNum<10? '0'+props.whiteNum:props.whiteNum }}
+        </span>
         <span class="text-xs">⚪</span>
       </div>
       <span class="text-2xl font-bold">:</span>
       <div class="flex flex-col items-center">
-        <span class="text-5xl font-extrabold mb-1">{{ props.blackNum }}</span>
+        <span class="text-5xl font-extrabold mb-1">
+          {{ props.blackNum<10? '0'+props.blackNum:props.blackNum }}
+        </span>
         <span class="text-xs">⚫</span>
       </div>
     </div>
