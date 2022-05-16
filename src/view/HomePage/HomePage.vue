@@ -75,14 +75,15 @@
               :black-num="gameState.blackNum"
               :white-num="gameState.whiteNum"
             />
-            <div>
-              <n-button @click="toggleScreen">
-                Default
-              </n-button>
-              <div style="width:32px">
-                <ModeSwitch />
-              </div>
-            </div>
+            <UtilFooter />
+            <!--            <div>-->
+            <!--              <n-button @click="toggleScreen">-->
+            <!--                Default-->
+            <!--              </n-button>-->
+            <!--              <div style="width:32px">-->
+            <!--                <ModeSwitch />-->
+            <!--              </div>-->
+            <!--            </div>-->
           </div>
         </div>
       </n-card>
@@ -124,21 +125,13 @@
   </n-layout-content>
 </template>
 <script setup lang="ts">
-import ModeSwitch from '@/components/ModeSwitch/ModeSwitch.vue';
 import SvgIcon from '@/components/SvgIcon/index.vue';
 import { reactive, ref } from 'vue';
 import screenfull from 'screenfull';
 import ChessGrid from '@/view/HomePage/ChessGrid.vue';
 import ScoreBoard from '@/view/HomePage/ScoreBoard.vue';
+import UtilFooter from '@/view/HomePage/UtilFooter.vue';
 import { Grid, ChessPiece } from './game.d';
-
-function toggleScreen() {
-  if (screenfull.isEnabled) {
-    // const element = document.getElementById('card');
-    // screenfull.request(element);
-    screenfull.request();
-  }
-}
 
 // 棋盘初始化
 function boardInit() {
