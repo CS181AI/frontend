@@ -9,7 +9,6 @@
 
 <script lang="ts" setup>
 import { withDefaults, defineProps } from 'vue';
-import screenfull from 'screenfull';
 import SvgIcon from '../SvgIcon/index.vue';
 
 interface Props{

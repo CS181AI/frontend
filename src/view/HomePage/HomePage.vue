@@ -76,14 +76,6 @@
               :white-num="gameState.whiteNum"
             />
             <UtilFooter />
-            <!--            <div>-->
-            <!--              <n-button @click="toggleScreen">-->
-            <!--                Default-->
-            <!--              </n-button>-->
-            <!--              <div style="width:32px">-->
-            <!--                <ModeSwitch />-->
-            <!--              </div>-->
-            <!--            </div>-->
           </div>
         </div>
       </n-card>
@@ -127,7 +119,6 @@
 <script setup lang="ts">
 import SvgIcon from '@/components/SvgIcon/index.vue';
 import { reactive, ref } from 'vue';
-import screenfull from 'screenfull';
 import ChessGrid from '@/view/HomePage/ChessGrid.vue';
 import ScoreBoard from '@/view/HomePage/ScoreBoard.vue';
 import UtilFooter from '@/view/HomePage/UtilFooter.vue';
