@@ -30,7 +30,7 @@
             </n-grid>
           </div>
           <div class="right-pannel">
-            <div style="width: 100%">
+            <div class="w-full">
               <n-form
                 label-placement="left"
                 :model="gameSetting"
@@ -70,18 +70,11 @@
                 </n-form-item>
               </n-form>
             </div>
-            <div>
-              <n-button
-                strong
-                secondary
-                type="success"
-                @click="print"
-              >
-                Start
-              </n-button>
-              <br>
-              当前棋子颜色{{ gameState.curChessPiece }}
-            </div>
+            <ScoreBoard
+              :cur-chess-piece="gameState.curChessPiece"
+              :black-num="gameState.blackNum"
+              :white-num="gameState.whiteNum"
+            />
             <div>
               <n-button @click="toggleScreen">
                 Default
@@ -136,6 +129,7 @@ import SvgIcon from '@/components/SvgIcon/index.vue';
 import { reactive, ref } from 'vue';
 import screenfull from 'screenfull';
 import ChessGrid from '@/view/HomePage/ChessGrid.vue';
+import ScoreBoard from '@/view/HomePage/ScoreBoard.vue';
 import { Grid, ChessPiece } from './game.d';
 
 function toggleScreen() {
@@ -193,12 +187,18 @@ enum Direction{TOPLEFT, TOP, TOPRIGHT, LEFT, RIGHT, BOTTOMLEFT, BOTTOM, BOTTOMRI
 class GameState {
   curChessPiece: ChessPiece;
 
+  whiteNum:number;
+
+  blackNum:number;
+
   availablePos: { 'white': AvailablePos[]; 'black': AvailablePos[]; };
 
   isEnd:boolean;
 
   constructor() {
     this.curChessPiece = 'black';
+    this.whiteNum = 2;
+    this.blackNum = 2;
     this.isEnd = false;
     const whiteAvailablePos:AvailablePos[] = [];
     const blackAvailablePos:AvailablePos[] = [];
@@ -207,13 +207,22 @@ class GameState {
   }
 
   putDown(index:number) {
+    let { blackNum } = this;
+    let { whiteNum } = this;
     board[index].chessPiece = this.curChessPiece;
     board[index].canPlace = false;
     const temp = this.curChessPiece === 'white' ? 'white' : 'black';
     const reverseList = this.availablePos[temp].filter((item) => item.position === index);
     reverseList[0].reverseList.forEach((item) => {
+      const i = temp === 'white' ? 1 : -1;
+      whiteNum += i;
+      blackNum += (-1 * i);
       board[item].chessPiece = this.curChessPiece;
     });
+    if (temp === 'white') whiteNum += 1;
+    else blackNum += 1;
+    this.blackNum = blackNum;
+    this.whiteNum = whiteNum;
     this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
     this.findAvailablePos();
     const color = this.curChessPiece === 'white' ? 'white' : 'black';
