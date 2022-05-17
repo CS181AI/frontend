@@ -39,6 +39,8 @@ module.exports = {
     'no-restricted-syntax': 'off',
     'no-constant-condition': 'off',
     'no-param-reassign': 'off',
+    'no-shadow': 'off',
+    '@typescript-eslint/no-shadow': ['error'],
   },
   settings: {
     // 安装eslint-import-resolver-typescript后在此配置import/resolver，即可读取项目根目录下tsconfig.json中的路径别名设置
