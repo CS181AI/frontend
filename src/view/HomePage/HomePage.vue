@@ -118,11 +118,14 @@
 </template>
 <script setup lang="ts">
 import SvgIcon from '@/components/SvgIcon/index.vue';
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
 import ChessGrid from '@/view/HomePage/ChessGrid.vue';
 import ScoreBoard from '@/view/HomePage/ScoreBoard.vue';
 import UtilFooter from '@/view/HomePage/UtilFooter.vue';
-import { Grid, ChessPiece } from './game.d';
+import getNextStep from '@/api/game';
+import { Grid } from './game.d';
+
+getNextStep({ price: 1 }).then((res) => console.log(res));
 
 // 棋盘初始化
 function boardInit() {
@@ -166,16 +169,14 @@ type AvailablePos={
 }
 
 // 定义方向枚举类
-// eslint-disable-next-line no-unused-vars
-enum Direction{TOPLEFT, TOP, TOPRIGHT, LEFT, RIGHT, BOTTOMLEFT, BOTTOM, BOTTOMRIGHT}
 class GameState {
-  curChessPiece: ChessPiece;
+  curChessPiece: 'white'|'black';
 
   whiteNum:number;
 
   blackNum:number;
 
-  availablePos: { 'white': AvailablePos[]; 'black': AvailablePos[]; };
+  availablePos: {[index:string]:AvailablePos[]};
 
   isEnd:boolean;
 
@@ -195,56 +196,38 @@ class GameState {
     let { whiteNum } = this;
     board[index].chessPiece = this.curChessPiece;
     board[index].canPlace = false;
-    const temp = this.curChessPiece === 'white' ? 'white' : 'black';
-    const reverseList = this.availablePos[temp].filter((item) => item.position === index);
+    const reverseList = this.availablePos[this.curChessPiece]
+      .filter((item) => item.position === index);
     reverseList[0].reverseList.forEach((item) => {
-      const i = temp === 'white' ? 1 : -1;
+      const i = this.curChessPiece === 'white' ? 1 : -1;
       whiteNum += i;
       blackNum += (-1 * i);
       board[item].chessPiece = this.curChessPiece;
     });
-    if (temp === 'white') whiteNum += 1;
+    if (this.curChessPiece === 'white') whiteNum += 1;
     else blackNum += 1;
     this.blackNum = blackNum;
     this.whiteNum = whiteNum;
     this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
     this.findAvailablePos();
-    const color = this.curChessPiece === 'white' ? 'white' : 'black';
-    if (this.availablePos[color].length === 0) {
+    if (this.availablePos[this.curChessPiece].length === 0) {
       this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
     }
     this.findAvailablePos();
-    const color1 = this.curChessPiece === 'white' ? 'white' : 'black';
-    if (this.availablePos[color1].length === 0) {
+    if (this.availablePos[this.curChessPiece].length === 0) {
       this.isEnd = true;
     }
   }
 
   findAvailablePos() {
-    const marginPos:number[] = [];
-    const res:AvailablePos[] = [];
-    for (let i = 0; i < 64; i++) {
-      if (GameState.isMargin(i)) { marginPos.push(i); }
-    }
-    // console.log(marginPos);
-    // 对每一个边缘点判断其是否可以落子
-    for (const i of marginPos) {
-      const { x, y } = board[i];
-      let reverseList:number[] = [];
-      // 遍历8个方向
-      const directions = Object.values(Direction)
-        .filter((v) => !Number.isNaN(Number(v))) as number[];
-      for (const direction of directions) {
-        // 将8个方向中存在可以翻转的index存入reverseList中
-        reverseList = reverseList.concat(this.checkPath(x, y, direction));
-      }
-      // 如果存在可翻转的index表示当前i边缘点可以落子
-      if (reverseList.length !== 0) {
-        res.push({ position: i, reverseList });
-      }
-    }
-    const temp = this.curChessPiece === 'white' ? 'white' : 'black';
-    this.availablePos[temp] = res;
+    this.availablePos[this.curChessPiece] = board
+      .map((grid, index) => {
+        // 8个单位向量，代表左上、上，右上，左，右等
+        const directions = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+        const reverseList = directions.map((direction) => this.checkPath(grid, direction));
+        return { position: index, reverseList: reverseList.flat() };
+      })
+      .filter((item) => item.reverseList.length !== 0);
     this.showHint();
   }
 
@@ -261,73 +244,26 @@ class GameState {
     });
   }
 
-  private checkPath(x:number, y:number, direction:Direction):number[] {
-    let x_ = x;
-    let y_ = y;
+  private checkPath(grid:Grid, direction:number[]):number[] {
+    // 如果当前位置有tile，那么该区域一定不可落子
+    if (GameState.hasChessPiece(grid.x, grid.y)) return [];
     let res:number[] = [];
-    let i = 0;
-    let j = 0;
-    switch (direction) {
-      case Direction.TOPLEFT:
-        i = -1;
-        j = -1;
-        break;
-      case Direction.TOP:
-        j = -1;
-        break;
-      case Direction.TOPRIGHT:
-        i = 1;
-        j = -1;
-        break;
-      case Direction.LEFT:
-        i = -1;
-        break;
-      case Direction.RIGHT:
-        i = 1;
-        break;
-      case Direction.BOTTOMLEFT:
-        i = -1;
-        j = 1;
-        break;
-      case Direction.BOTTOM:
-        j = 1;
-        break;
-      case Direction.BOTTOMRIGHT:
-        i = 1;
-        j = 1;
-        break;
-
-      default:
-        return res;
-    }
-    if (!GameState.hasChessPiece(x_ + i, y_ + j)
-        || board[x_ + i + 8 * (y_ + j)].chessPiece === this.curChessPiece) {
-      return res;
-    }
+    const i = direction[0];
+    const j = direction[1];
+    let { x, y } = grid;
     while (true) {
-      x_ += i;
-      y_ += j;
-      if (!GameState.hasChessPiece(x_, y_)) {
+      x += i;
+      y += j;
+      if (!GameState.hasChessPiece(x, y)) {
         res = [];
         break;
-      } else if (board[x_ + 8 * y_].chessPiece !== this.curChessPiece) {
-        res.push(x_ + 8 * y_);
+      } else if (board[x + 8 * y].chessPiece !== this.curChessPiece) {
+        res.push(x + 8 * y);
       } else {
         break;
       }
     }
     return res;
-  }
-
-  private static isMargin(index:number) {
-    if (board[index].chessPiece !== null) return false;
-    const { x, y } = board[index];
-    for (const i of [-1, 0, 1]) {
-      for (const j of [-1, 0, 1]) {
-        if (GameState.hasChessPiece(x + i, y + j)) return true;
-      }
-    }
-    return false;
   }
 
   private static isValid(x:number, y:number) {
