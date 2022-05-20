@@ -64,6 +64,7 @@
                     secondary
                     type="info"
                     class="w-full"
+                    @click="nextStep"
                   >
                     开始
                   </n-button>
@@ -103,6 +104,11 @@
             />
           </template>
           <template #footer>
+            <LineChart
+              :total-step="gameRecord.totalStep"
+              :black-num-list="gameRecord.blackNumList"
+              :white-num-list="gameRecord.whiteNumList"
+            />
             <n-button
               strong
               secondary
@@ -123,9 +129,8 @@ import ChessGrid from '@/view/HomePage/ChessGrid.vue';
 import ScoreBoard from '@/view/HomePage/ScoreBoard.vue';
 import UtilFooter from '@/view/HomePage/UtilFooter.vue';
 import getNextStep from '@/api/game';
-import { Grid } from './game.d';
-
-getNextStep({ price: 1 }).then((res) => console.log(res));
+import LineChart from '@/view/HomePage/LineChart.vue';
+import { ChessPiece, Grid } from './game.d';
 
 // 棋盘初始化
 function boardInit() {
@@ -156,6 +161,14 @@ const gameSetting = reactive({
   agent: '',
   selectedChessPiece: 'black',
 });
+
+// 用于记录游戏数据
+interface GameRecord{
+  totalStep:number
+  whiteNumList:number[]
+  blackNumList:number[]
+}
+const gameRecord = reactive<GameRecord>({ totalStep: 0, whiteNumList: [], blackNumList: [] });
 
 function print() {
   console.log(gameSetting.selectedChessPiece);
@@ -208,6 +221,10 @@ class GameState {
     else blackNum += 1;
     this.blackNum = blackNum;
     this.whiteNum = whiteNum;
+    gameRecord.totalStep += 1;
+    gameRecord.blackNumList.push(blackNum);
+    gameRecord.whiteNumList.push(whiteNum);
+
     this.curChessPiece = this.curChessPiece === 'black' ? 'white' : 'black';
     this.findAvailablePos();
     if (this.availablePos[this.curChessPiece].length === 0) {
@@ -276,6 +293,21 @@ class GameState {
 }
 const gameState = reactive(new GameState());
 // gameState.findAvailablePos();
+
+interface GameInfo{
+  selectedAgent:string
+  agentChessPiece:ChessPiece
+  gridList:Grid[]
+}
+const gameInfo:GameInfo = {
+  selectedAgent: 'greedy',
+  agentChessPiece: 'black',
+  gridList: board,
+};
+function nextStep() {
+  console.log('fsd');
+  getNextStep(gameInfo).then((res) => putDown(res.pos));
+}
 
 function changePieceType() {
   board[27].chessPiece = board[27].chessPiece === 'white' ? 'black' : 'white';
