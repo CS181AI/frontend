@@ -32,8 +32,10 @@
           <div class="right-pannel">
             <div class="w-full">
               <n-form
+                ref="formRef"
                 label-placement="left"
                 :model="gameSetting"
+                :disabled="gameState.isPlaying"
               >
                 <n-form-item label="模式选择">
                   <n-select
@@ -62,15 +64,19 @@
                   <n-button
                     strong
                     secondary
+                    :disabled="gameState.isPlaying"
                     type="info"
                     class="w-full"
-                    @click="nextStep"
+                    @click="startGame"
                   >
                     开始
                   </n-button>
                 </n-form-item>
               </n-form>
             </div>
+            <!--            <n-button @click="nextStep">-->
+            <!--              下一步-->
+            <!--            </n-button>-->
             <ScoreBoard
               :cur-chess-piece="gameState.curChessPiece"
               :black-num="gameState.blackNum"
@@ -85,6 +91,7 @@
     <!--    结果显示-->
     <n-modal v-model:show="gameState.isEnd">
       <n-card
+        id="resultcard"
         style="width: 600px"
         :bordered="false"
         size="huge"
@@ -113,6 +120,7 @@
               strong
               secondary
               type="success"
+              @click="print"
             >
               再来一局
             </n-button>
@@ -124,13 +132,14 @@
 </template>
 <script setup lang="ts">
 import SvgIcon from '@/components/SvgIcon/index.vue';
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import ChessGrid from '@/view/HomePage/ChessGrid.vue';
 import ScoreBoard from '@/view/HomePage/ScoreBoard.vue';
 import UtilFooter from '@/view/HomePage/UtilFooter.vue';
 import getNextStep from '@/api/game';
 import LineChart from '@/view/HomePage/LineChart.vue';
-import { ChessPiece, Grid } from './game.d';
+import { FormInst } from 'naive-ui';
+import { Grid } from './game.d';
 
 // 棋盘初始化
 function boardInit() {
@@ -156,11 +165,40 @@ function boardInit() {
 const board = reactive(boardInit());
 
 // 表单项，即游戏设置
-const options = [{ label: '双人模式', value: 1 }, { label: '蒙特卡洛', value: 2 }, { label: '强化学习', value: 3 }];
+const formRef = ref<FormInst | null>(null);
+const options = [
+  { label: '贪心的AI', value: 'greedy' }, { label: 'MinMax', value: 'minMax' },
+  { label: '青春版αβ', value: 'alphaBeta' }, { label: '至尊版αβ', value: 'alphaBetaP' },
+  { label: 'MCTS mini', value: 'mctsMini' }, { label: 'MCTS pro', value: 'mctsPro' },
+  { label: '强化学习', value: 'rl' }];
 const gameSetting = reactive({
   agent: '',
   selectedChessPiece: 'black',
 });
+function startGame(e:MouseEvent) {
+  e.preventDefault();
+  formRef.value?.validate(async (err) => {
+    if (!err) {
+      // console.log(gameSetting);
+      gameState.isPlaying = true;
+      if (gameSetting.selectedChessPiece === 'white') {
+        const gameInfo = {
+          selectedAgent: gameSetting.agent,
+          agentChessPiece: gameSetting.selectedChessPiece === 'white' ? 'black' : 'white',
+          gridList: board,
+        };
+        // console.log('fsd');
+        // console.log(gameInfo);
+        try {
+          const data = await getNextStep(gameInfo);
+          gameState.putDown(data.pos);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } else console.log(err);
+  });
+}
 
 // 用于记录游戏数据
 interface GameRecord{
@@ -171,7 +209,6 @@ interface GameRecord{
 const gameRecord = reactive<GameRecord>({ totalStep: 0, whiteNumList: [], blackNumList: [] });
 
 function print() {
-  console.log(gameSetting.selectedChessPiece);
 }
 
 // 游戏状态初始化
@@ -191,12 +228,15 @@ class GameState {
 
   availablePos: {[index:string]:AvailablePos[]};
 
+  isPlaying:boolean;
+
   isEnd:boolean;
 
   constructor() {
     this.curChessPiece = 'black';
     this.whiteNum = 2;
     this.blackNum = 2;
+    this.isPlaying = false;
     this.isEnd = false;
     const whiteAvailablePos:AvailablePos[] = [];
     const blackAvailablePos:AvailablePos[] = [];
@@ -294,33 +334,37 @@ class GameState {
 const gameState = reactive(new GameState());
 // gameState.findAvailablePos();
 
-interface GameInfo{
-  selectedAgent:string
-  agentChessPiece:ChessPiece
-  gridList:Grid[]
-}
-const gameInfo:GameInfo = {
-  selectedAgent: 'greedy',
-  agentChessPiece: 'black',
-  gridList: board,
-};
-function nextStep() {
-  console.log('fsd');
-  getNextStep(gameInfo).then((res) => putDown(res.pos));
-}
-
-function changePieceType() {
-  board[27].chessPiece = board[27].chessPiece === 'white' ? 'black' : 'white';
-}
+// function changePieceType() {
+//   board[27].chessPiece = board[27].chessPiece === 'white' ? 'black' : 'white';
+// }
 
 // 落子函数
-function putDown(index:number) {
-  if (!board[index].canPlace) {
+async function putDown(index:number) {
+  if (gameSetting.agent !== '' && gameState.curChessPiece !== gameSetting.selectedChessPiece) {
     window.$message.warning(
+      '请等待AI落子',
+    );
+  } else if (!board[index].canPlace) {
+    window.$message.error(
       `不可在此区域落子:${index}`,
     );
   } else {
     gameState.putDown(index);
+    if (gameSetting.agent !== '' && !gameState.isEnd && gameState.curChessPiece !== gameSetting.selectedChessPiece) {
+      const gameInfo = {
+        selectedAgent: gameSetting.agent,
+        agentChessPiece: gameSetting.selectedChessPiece === 'white' ? 'black' : 'white',
+        gridList: board,
+      };
+      // console.log('fsd');
+      // console.log(gameInfo);
+      try {
+        const data = await getNextStep(gameInfo);
+        gameState.putDown(data.pos);
+      } catch (err) {
+        console.log(err);
+      }
+    }
   }
 }
 </script>
